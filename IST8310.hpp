@@ -23,30 +23,31 @@ depends: []
 #include "message.hpp"
 #include "transform.hpp"
 
-#define IST8310_REG_WHO_AM_I (0x00)
-#define IST8310_REG_STAT1 (0x02)
-#define IST8310_REG_DATAXL (0x03)
-#define IST8310_REG_DATAXH (0x04)
-#define IST8310_REG_DATAYL (0x05)
-#define IST8310_REG_DATAYH (0x06)
-#define IST8310_REG_DATAZL (0x07)
-#define IST8310_REG_DATAZH (0x08)
-#define IST8310_REG_STAT2 (0x09)
-#define IST8310_REG_CNTL1 (0x0A)
-#define IST8310_REG_CNTL2 (0x0B)
-#define IST8310_REG_SELFTEST (0x0C)
-#define IST8310_REG_TEMP_LSB (0x1C)
-#define IST8310_REG_TEMP_MSB (0x1D)
-#define IST8310_REG_AVGCNTL (0x41)
-#define IST8310_REG_PDCNTL (0x42)
+inline constexpr uint8_t IST8310_REG_WHO_AM_I = 0x00;
+inline constexpr uint8_t IST8310_REG_STAT1 = 0x02;
+inline constexpr uint8_t IST8310_REG_DATAXL = 0x03;
+inline constexpr uint8_t IST8310_REG_DATAXH = 0x04;
+inline constexpr uint8_t IST8310_REG_DATAYL = 0x05;
+inline constexpr uint8_t IST8310_REG_DATAYH = 0x06;
+inline constexpr uint8_t IST8310_REG_DATAZL = 0x07;
+inline constexpr uint8_t IST8310_REG_DATAZH = 0x08;
+inline constexpr uint8_t IST8310_REG_STAT2 = 0x09;
+inline constexpr uint8_t IST8310_REG_CNTL1 = 0x0A;
+inline constexpr uint8_t IST8310_REG_CNTL2 = 0x0B;
+inline constexpr uint8_t IST8310_REG_SELFTEST = 0x0C;
+inline constexpr uint8_t IST8310_REG_TEMP_LSB = 0x1C;
+inline constexpr uint8_t IST8310_REG_TEMP_MSB = 0x1D;
+inline constexpr uint8_t IST8310_REG_AVGCNTL = 0x41;
+inline constexpr uint8_t IST8310_REG_PDCNTL = 0x42;
 
-#define IST8310_MAG_SEN (0.3f)
+inline constexpr float IST8310_MAG_SEN = 0.3f;
 
-#define IST8310_WHO_AM_I_RESPONSE (0x10)
+inline constexpr uint8_t IST8310_WHO_AM_I_RESPONSE = 0x10;
 
-#define IST8310_I2C_ADDR (0x0E)  // Default 7-bit address, no R/W bit
+// Default 7-bit address, no R/W bit
+inline constexpr uint8_t IST8310_I2C_ADDR = 0x0E;
 
-#define IST8310_MAG_RX_LEN (6)
+inline constexpr uint8_t IST8310_MAG_RX_LEN = 6;
 
 class IST8310 : public LibXR::Application {
  public:
@@ -172,7 +173,7 @@ class IST8310 : public LibXR::Application {
     } else if (argc == 4) {
       if (strcmp(argv[1], "show") == 0) {
         int time_ms = atoi(argv[2]);
-        int interval_ms = atoi(argv[3]);
+        int interval_ms = std::clamp(atoi(argv[3]), 2, 1000);
         for (int i = 0; i < time_ms / interval_ms; i++) {
           LibXR::Thread::Sleep(interval_ms);
           LibXR::STDIO::Printf<"Mag: x=%f, y=%f, z=%f\r\n">(
