@@ -2,24 +2,15 @@
 
 // clang-format off
 /* === MODULE MANIFEST V2 ===
-module_description: iSentek IST8310 三轴磁力计驱动模块 / Driver module for iSentek IST8310 3-axis magnetometer
-constructor_args:
-  - rotation:
-      w: 1.0
-      x: 0.0
-      y: 0.0
-      z: 0.0
-  - topic_name: "ist8310_mag"
-  - task_stack_depth: 1536
-template_args: []
-required_hardware: i2c_ist8310 ist8310_int ist8310_rst ramfs
+module_description: iSentek IST8310 三轴磁力计驱动模块 / Driver module for iSentek IST8310
+  3-axis magnetometer
 depends: []
 === END MANIFEST === */
 // clang-format on
 
-#include "app_framework.hpp"
 #include "gpio.hpp"
 #include "i2c.hpp"
+#include "libxr.hpp"
 #include "message.hpp"
 #include "transform.hpp"
 
@@ -49,21 +40,20 @@ inline constexpr uint8_t IST8310_I2C_ADDR = 0x0E;
 
 inline constexpr uint8_t IST8310_MAG_RX_LEN = 6;
 
-class IST8310 : public LibXR::Application {
+class IST8310 {
  public:
-  IST8310(LibXR::HardwareContainer& hw, LibXR::ApplicationManager& app,
-          LibXR::Quaternion<float>&& rotation, const char* topic_name,
-          size_t task_stack_depth)
+  IST8310(LibXR::GPIO& int_drdy, LibXR::GPIO& reset, LibXR::I2C& i2c,
+          LibXR::RamFS& ramfs, LibXR::Quaternion<float>&& rotation,
+          const char* topic_name, size_t task_stack_depth)
       : rotation_(std::move(rotation)),
         topic_mag_(LibXR::Topic::CreateTopic<decltype(mag_data_)>(topic_name)),
-        int_drdy_(hw.template FindOrExit<LibXR::GPIO>({"ist8310_int"})),
-        reset_(hw.template FindOrExit<LibXR::GPIO>({"ist8310_rst"})),
-        i2c_(hw.template FindOrExit<LibXR::I2C>({"i2c_ist8310"})),
+        int_drdy_((&int_drdy)),
+        reset_((&reset)),
+        i2c_((&i2c)),
         op_i2c_read_(sem_i2c_),
         op_i2c_write_(sem_i2c_),
         cmd_file_(LibXR::RamFS::CreateFile("ist8310", CommandFunc, this)) {
-    app.Register(*this);
-    hw.template FindOrExit<LibXR::RamFS>({"ramfs"})->Add(cmd_file_);
+    (&ramfs)->Add(cmd_file_);
 
     int_drdy_->DisableInterrupt();
     auto int_cb = LibXR::GPIO::Callback::Create(
@@ -156,7 +146,7 @@ class IST8310 : public LibXR::Application {
     i2c_->MemWrite(IST8310_I2C_ADDR, reg, val, op_i2c_write_);
   }
 
-  void OnMonitor(void) override {
+  void OnMonitor(void) {
     if (std::isnan(mag_data_.x()) || std::isnan(mag_data_.y()) ||
         std::isnan(mag_data_.z()) || std::isinf(mag_data_.x()) ||
         std::isinf(mag_data_.y()) || std::isinf(mag_data_.z())) {
