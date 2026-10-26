@@ -43,17 +43,19 @@ inline constexpr uint8_t IST8310_MAG_RX_LEN = 6;
 class IST8310 {
  public:
   IST8310(LibXR::GPIO& int_drdy, LibXR::GPIO& reset, LibXR::I2C& i2c,
-          LibXR::RamFS& ramfs, LibXR::Quaternion<float>&& rotation,
-          const char* topic_name, size_t task_stack_depth)
+          LibXR::RamFS& ramfs,
+          LibXR::Quaternion<float>&& rotation = {1.0, 0.0, 0.0, 0.0},
+          const char* topic_name = "ist8310_mag",
+          size_t task_stack_depth = 1536)
       : rotation_(std::move(rotation)),
         topic_mag_(LibXR::Topic::CreateTopic<decltype(mag_data_)>(topic_name)),
-        int_drdy_((&int_drdy)),
-        reset_((&reset)),
-        i2c_((&i2c)),
+        int_drdy_(&int_drdy),
+        reset_(&reset),
+        i2c_(&i2c),
         op_i2c_read_(sem_i2c_),
         op_i2c_write_(sem_i2c_),
         cmd_file_(LibXR::RamFS::CreateFile("ist8310", CommandFunc, this)) {
-    (&ramfs)->Add(cmd_file_);
+    ramfs.Add(cmd_file_);
 
     int_drdy_->DisableInterrupt();
     auto int_cb = LibXR::GPIO::Callback::Create(
